@@ -1,0 +1,67 @@
+#!/bin/bash
+
+## Author: Jari Tervonen, 2015
+## Source: https://github.com/jarppa/raspi-bt-audio-sink
+
+BT_MAIN_CONF="/etc/bluetooth/main.conf"
+BT_AUDIO_CONF="/etc/bluetooth/audio.conf"
+PULSE_DAEMON_CONF="/etc/pulse/deamon.conf"
+BACKUP_DIR="conf_backups"
+BT_LIB_DIR="/var/lib/bluetooth"
+
+print_usage(){
+  echo "configure <device addr>"
+}
+
+if [ `whoami` != "root" ]; then
+  echo "You need to be root!"
+  exit 1
+fi
+
+if [ -d $BACKUP_DIR ]; then
+  echo "You've already configured before? I don't want to overwrite your old backups. Please resolve this by hand..."
+  exit 1
+fi
+
+if [ $@ -lt 2 ]; then
+  print_usage
+  exit 1
+fi
+
+dev=$1
+
+if [ `ls $BT_LIB_DIR/$dev` != 0 ]; then
+  echo "Cannot find configs for device $dev"
+  exit 1
+fi
+
+mkdir $BACKUP_DIR
+
+cp $BT_MAIN_CONF $BACKUP_DIR
+cp $BT_AUDIO_CONF $BACKUP_DIR
+cp $PULSE_DAEMON_CONF $BACKUP_DIR
+
+sed -i 's/^resample-method = [a-zA-Z0-9]\+$/resample-method = trivial/' $PULSE_DAEMON_CONF
+
+if [ `grep 'Enable=' $BT_AUDIO_CONF ]; then
+  sed -i 's/^Enable=[A-Za-z,]\+/Enable=Source,Sink,Media,Socket/' $BT_AUDIO_CONF
+else
+  echo "Enable=Source,Sink,Media,Socket" >> $BT_AUDIO_CONF
+fi
+
+c=`hciconfig | grep -e '^hci[0-9]' | wc -l`
+
+if [ "$c" == "0" ]; then
+  # This would change bluetooth configs globally
+  #sed -i 's/^Class = 0x[0-9A-Fa-f]\+$/Class = 0x20041C/' $BT_MAIN_CONF
+  echo "Please plug-in a Bluetooth adapter!"
+  echo "Cannot continue, bye bye!"
+  exit 1
+else
+  # Change only the adapter's config
+  #dev=`hciconfig | grep -e '[0-9A-Z]\+:[0-9A-Z]\+:[0-9A-Z]\+:[0-9A-Z]\+:[0-9A-Z]\+:[0-9A-Z]\+' | cut -d ' ' -f 3`
+  sed -i 's/^class 0x[0-9A-Fa-f]\+$/class 0x20041C/' $BT_LIB_DIR/$dev/config
+fi
+
+echo "Configuration done."
+

@@ -1,0 +1,24 @@
+#!/bin/bash
+
+## Author: Jari Tervonen, 2015
+## Source: https://github.com/jarppa/raspi-bt-audio-sink
+
+if [ `sudo whoami` != "root" ]; then
+  echo "You need to be root to install!"
+  exit 1
+fi
+
+if [ ! -d conf_backups ]; then
+  echo "Did you remember to run the configuration first?"
+  exit 1
+fi
+
+cp src/enable-bt-audio /usr/bin
+cp src/99-btaudiosink.rules /etc/udev/rules.d
+
+cp src/bluetooth-agent /etc/init.d/
+update-rc.d bluetooth-agent defaults
+
+service bluetooth restart
+/etc/init.d/bluetooth-agent restart
+
