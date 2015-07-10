@@ -35,20 +35,28 @@ if [ `ls $BT_LIB_DIR/$dev` != 0 ]; then
   exit 1
 fi
 
-mkdir $BACKUP_DIR
+# Add user to lp group
+if [ `groups | grep '\blp\b'` ]; then
+  adduser pi lp
+fi
 
+# backup confs
+mkdir $BACKUP_DIR
 cp $BT_MAIN_CONF $BACKUP_DIR
 cp $BT_AUDIO_CONF $BACKUP_DIR
 cp $PULSE_DAEMON_CONF $BACKUP_DIR
 
+# Change PulseAudio resample method
 sed -i 's/^resample-method = [a-zA-Z0-9]\+$/resample-method = trivial/' $PULSE_DAEMON_CONF
 
+# Enable needed profiles in Bluez
 if [ `grep 'Enable=' $BT_AUDIO_CONF ]; then
   sed -i 's/^Enable=[A-Za-z,]\+/Enable=Source,Sink,Media,Socket/' $BT_AUDIO_CONF
 else
   echo "Enable=Source,Sink,Media,Socket" >> $BT_AUDIO_CONF
 fi
 
+# Set correct class for bluetooth adapter
 c=`hciconfig | grep -e '^hci[0-9]' | wc -l`
 
 if [ "$c" == "0" ]; then
