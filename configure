@@ -63,5 +63,7 @@ else
   sed -i 's/^class 0x[0-9A-Fa-f]\+$/class 0x20041C/' $BT_LIB_DIR/$dev/config
 fi
 
-echo "Configuration done."
+#sed -i 's/^1:2345:respawn:/sbin/getty --noclear 38400 tty1/#1:2345:respawn:/sbin/getty --noclear 38400 tty1/'
+#echo "1:2345:respawn:/sbin/agetty -a pi --noclear 38400 tty1 linux" >> /etc/inittab
 
+echo "Configuration done."
