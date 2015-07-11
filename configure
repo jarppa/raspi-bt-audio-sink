@@ -33,6 +33,24 @@ if [ `whoami` != "root" ]; then
   exit 1
 fi
 
+found=`ls $BT_LIB_DIR/$dev > /dev/null; echo $?`
+if [ "$found" != "0" ]; then
+  echo "Cannot find configs for device $dev"
+  exit 1
+fi
+
+distro=`grep -e "^NAME=" /etc/os-release | cut -d"=" -f2`
+if [ "$distro" != "Raspbian GNU/Linux"  ] && [ ! $force ]; then
+  echo "This script was made for Raspibian distribution. We don't know if it will work on yours!"
+  echo "If you feel adventurous, use -f flag to force configure"
+  exit 1
+fi
+
+if [ -d $BACKUP_DIR ]; then
+  echo "You've already configured before? I don't want to overwrite your old backups. Please resolve this by hand..."
+  exit 1
+fi
+
 create_user=`awk -F':' '{ print $1}' /etc/passwd | grep "pi" > /dev/null 2>&1; echo $?`
 if [ $create_user ]; then
   echo "User pi was not found in your system. Would you like to add it? (y/n)"
@@ -44,30 +62,13 @@ if [ $create_user ]; then
     exit 1
   fi
 fi
-rev=`cat /proc/cpuinfo | grep Hardware | cut -d ":" -f 2 | cut -d " " -f 2`
-if [ "$rev" != "BCM2708" ] && [ ! $force ]; then
-  echo "This script was made for Raspberry Pi with BCM2708 chipset. Your's seems to differ..."
-  echo "Don't worry though, your's could work too with -f flag."
-  exit 1
-fi
 
-distro=`grep -e "^NAME=" /etc/os-release | cut -d"=" -f2`
-if [ "$distro" != "Raspbian GNU/Linux"  ] && [ ! $force ]; then
-  echo "This script was made for Raspibian distribution. We don't know if it will work on yours!"
-  echo "If you feel adventurous, use -f flag to force configure"
-fi
-
-if [ -d $BACKUP_DIR ]; then
-  echo "You've already configured before? I don't want to overwrite your old backups. Please resolve this by hand..."
-  exit 1
-fi
-
-found=`ls $BT_LIB_DIR/$dev > /dev/null; echo $?`
-
-if [ "$found" != "0" ]; then
-  echo "Cannot find configs for device $dev"
-  exit 1
-fi
+#rev=`cat /proc/cpuinfo | grep Hardware | cut -d ":" -f 2 | cut -d " " -f 2`
+#if [ "$rev" != "BCM2708" ] && [ ! $force ]; then
+#  echo "This script was made for Raspberry Pi with BCM2708 chipset. Your's seems to differ..."
+#  echo "Don't worry though, your's could work too with -f flag."
+#  exit 1
+#fi
 
 # Add user to lp group
 if [ `groups | grep '\blp\b'` ]; then
@@ -91,19 +92,21 @@ else
 fi
 
 # Set correct class for bluetooth adapter
-c=`hciconfig | grep -e '^hci[0-9]' | wc -l`
+sed -i 's/^class 0x[0-9A-Fa-f]\+$/class 0x20041C/' $BT_LIB_DIR/$dev/config
 
-if [ "$c" == "0" ]; then
+#c=`hciconfig | grep -e '^hci[0-9]' | wc -l`
+
+#if [ "$c" == "0" ]; then
   # This would change bluetooth configs globally
   #sed -i 's/^Class = 0x[0-9A-Fa-f]\+$/Class = 0x20041C/' $BT_MAIN_CONF
-  echo "Please plug-in a Bluetooth adapter!"
-  echo "Cannot continue, bye bye!"
-  exit 1
-else
+#  echo "Please plug-in a Bluetooth adapter!"
+#  echo "Cannot continue, bye bye!"
+#  exit 1
+#else
   # Change only the adapter's config
   #dev=`hciconfig | grep -e '[0-9A-Z]\+:[0-9A-Z]\+:[0-9A-Z]\+:[0-9A-Z]\+:[0-9A-Z]\+:[0-9A-Z]\+' | cut -d ' ' -f 3`
-  sed -i 's/^class 0x[0-9A-Fa-f]\+$/class 0x20041C/' $BT_LIB_DIR/$dev/config
-fi
+  #sed -i 's/^class 0x[0-9A-Fa-f]\+$/class 0x20041C/' $BT_LIB_DIR/$dev/config
+#fi
 
 #sed -i 's/^1:2345:respawn:/sbin/getty --noclear 38400 tty1/#1:2345:respawn:/sbin/getty --noclear 38400 tty1/'
 #echo "1:2345:respawn:/sbin/agetty -a pi --noclear 38400 tty1 linux" >> /etc/inittab

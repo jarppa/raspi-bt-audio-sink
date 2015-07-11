@@ -22,3 +22,11 @@ update-rc.d bluetooth-agent defaults
 service bluetooth restart
 /etc/init.d/bluetooth-agent restart
 
+echo "Install done. If everything went fine your system should work after reboot."
+echo "Reboot now? (y/n)"
+read answer
+if [ "$answer" == "y" ]; then
+  reboot
+fi
+
+
