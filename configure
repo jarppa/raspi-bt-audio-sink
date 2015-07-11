@@ -13,14 +13,14 @@ print_usage(){
   echo "configure <device addr> [-f]"
 }
 
-if [ $@ -lt 2 ]; then
+if [ $# -lt 2 ]; then
   print_usage
   exit 1
 fi
 
 dev=$1
 force=0
-if [ $@ -gt 2 ]; then
+if [ $# -gt 2 ]; then
   if [ "$2" != "-f" ]; then
     print_usage
     exit 1
@@ -33,15 +33,26 @@ if [ `whoami` != "root" ]; then
   exit 1
 fi
 
+create_user=`awk -F':' '{ print $1}' /etc/passwd | grep "pi" > /dev/null 2>&1; echo $?`
+if [ $create_user ]; then
+  echo "User pi was not found in your system. Would you like to add it? (y/n)"
+  read answer
+  if [ "$answer" == "y" ]; then
+    adduser --disabled-password --gecos "" pi
+  else
+    echo "Cannot continue...bye bye!"
+    exit 1
+  fi
+fi
 rev=`cat /proc/cpuinfo | grep Hardware | cut -d ":" -f 2 | cut -d " " -f 2`
-if [ "$rev" != "BCM2708" ] && [ ! force ]; then
+if [ "$rev" != "BCM2708" ] && [ ! $force ]; then
   echo "This script was made for Raspberry Pi with BCM2708 chipset. Your's seems to differ..."
   echo "Don't worry though, your's could work too with -f flag."
   exit 1
 fi
 
 distro=`grep -e "^NAME=" /etc/os-release | cut -d"=" -f2`
-if [ "$distro" != "Raspbian GNU/Linux"  ] && [ ! force ]; then
+if [ "$distro" != "Raspbian GNU/Linux"  ] && [ ! $force ]; then
   echo "This script was made for Raspibian distribution. We don't know if it will work on yours!"
   echo "If you feel adventurous, use -f flag to force configure"
 fi
