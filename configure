@@ -10,18 +10,8 @@ BACKUP_DIR="conf_backups"
 BT_LIB_DIR="/var/lib/bluetooth"
 
 print_usage(){
-  echo "configure <device addr>"
+  echo "configure <device addr> [-f]"
 }
-
-if [ `whoami` != "root" ]; then
-  echo "You need to be root!"
-  exit 1
-fi
-
-if [ -d $BACKUP_DIR ]; then
-  echo "You've already configured before? I don't want to overwrite your old backups. Please resolve this by hand..."
-  exit 1
-fi
 
 if [ $@ -lt 2 ]; then
   print_usage
@@ -29,8 +19,41 @@ if [ $@ -lt 2 ]; then
 fi
 
 dev=$1
+force=0
+if [ $@ -gt 2 ]; then
+  if [ "$2" != "-f" ]; then
+    print_usage
+    exit 1
+  fi
+  force=1
+fi
 
-if [ `ls $BT_LIB_DIR/$dev` != 0 ]; then
+if [ `whoami` != "root" ]; then
+  echo "You need to be root!"
+  exit 1
+fi
+
+rev=`cat /proc/cpuinfo | grep Hardware | cut -d ":" -f 2 | cut -d " " -f 2`
+if [ "$rev" != "BCM2708" ] && [ ! force ]; then
+  echo "This script was made for Raspberry Pi with BCM2708 chipset. Your's seems to differ..."
+  echo "Don't worry though, your's could work too with -f flag."
+  exit 1
+fi
+
+distro=`grep -e "^NAME=" /etc/os-release | cut -d"=" -f2`
+if [ "$distro" != "Raspbian GNU/Linux"  ] && [ ! force ]; then
+  echo "This script was made for Raspibian distribution. We don't know if it will work on yours!"
+  echo "If you feel adventurous, use -f flag to force configure"
+fi
+
+if [ -d $BACKUP_DIR ]; then
+  echo "You've already configured before? I don't want to overwrite your old backups. Please resolve this by hand..."
+  exit 1
+fi
+
+found=`ls $BT_LIB_DIR/$dev > /dev/null; echo $?`
+
+if [ "$found" != "0" ]; then
   echo "Cannot find configs for device $dev"
   exit 1
 fi

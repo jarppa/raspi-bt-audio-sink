@@ -1,8 +1,14 @@
 #!/bin/bash
-#change if you don't use default analog audio out.
-#THIS DIDN'T WORK FOR MY PI SO I ADDED A amixer COMMAND BELOW
-#AUDIOSINK="alsa_output.platform-bcm2835_AUD0.0.analog-stereo"
-AUDIOSINK="alsa_output.0.analog-stereo"
+
+rev=`cat /proc/cpuinfo | grep Hardware | cut -d ":" -f 2 | cut -d " " -f 2`
+if [ "$rev" -eq "BCM2835" ]; then
+  AUDIOSINK="alsa_output.platform-bcm2835_AUD0.0.analog-stereo"
+elif [ "$rev" -eq "BCM2708" ]; then
+  AUDIOSINK="alsa_output.0.analog-stereo"
+else
+  exit 0
+fi
+
 echo "Executing bluetooth script...|$ACTION|" >> /var/log/bluetooth_dev
 
 ACTION=$(expr "$ACTION" : "\([a-zA-Z]\+\).*")
@@ -16,9 +22,9 @@ hciconfig hci0 noscan
 # COMMENT THIS LINE OUT IF YOU WANT TO OUTPUT AUDIO THROUGH HDMI
 amixer cset numid=3 1
 
-# Set volume level to 30 percent
+# Set PA audio to 100% and then from Alsa to 50%
+pactl -- set-sink-volume $AUDIOSINK 100%
 amixer set Master 50%
-pacmd set-sink-volume 0 65537
 
    for dev in $(find /sys/devices/virtual/input/ -name input*)
    do
