@@ -20,11 +20,13 @@ Backups of original configs are stored to this project's path. You've been warne
 Install
 -------
 Configure your system:
+```
 $ ./configure
-
+```
 Install scripts:
+```
 $ ./install
-
+```
 
 Improvements
 ------------
