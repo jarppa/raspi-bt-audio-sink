@@ -43,6 +43,13 @@ With:
   1:2345:respawn:/sbin/agetty -a pi --noclear 38400 tty1 linux
 ```
 
+Bluetooth audio source devices have to be paired and added to trusted devices on RasPi side. This could be automated to naively trust all pairers 
+instead of manually running 
+```
+$ sudo bluez-test-device trusted xx:xx:xx:xx:xx:xx yes
+```
+everytime you want to add a new device to sources.
+ 
 Credits
 -------
 Daniel Gillespie for gathering most of the information from various sources to his Instructables article http://www.instructables.com/id/Turn-your-Raspberry-Pi-into-a-Portable-Bluetooth-A/?ALLSTEPS
